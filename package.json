@@ -1,0 +1,26 @@
+{
+  "name": "pandafeed",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "GG, PM",
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^2.2.4",
+    "express": "^4.11.2",
+    "react": "^0.12.2"
+  },
+  "devDependencies": {
+    "browserify": "^6.2.0",
+    "reactify": "^0.15.2",
+    "watchify": "^2.1.1"
+  },
+  "browserify": {
+    "transform": [
+      "reactify"
+    ]
+  }
+}
