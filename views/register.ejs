@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>PandaFeed</title>
+        <link rel="stylesheet" type="text/css" href="/css/style.css">
+
+    </head>
+    <body>
+        <form tag="Register User" action="/register" method="POST">
+		<div align="center">
+			Username *: <input type="username" name="username" id="username" class="<%= errors.emptyUsername ? "error" : "" %>" />
+ 
+            Password *: <input type="password" name="password" id="password" class="<%=  errors.emptyPassword ? "error" : "" %>"/>
+            
+            <div><%= errors.userExists ? "Username is taken!" : ''%></div>
+
+			<input type="submit" value="Register" />
+		</div>
+	</form>
+    <script src="js/validations.js"></script>
+    </body>
+</html>
