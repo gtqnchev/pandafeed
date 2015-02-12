@@ -27,5 +27,5 @@ message: _id:       objectID
                       avatar_id: objectID }
          text:      string
          timestamp: time
-         likes:     [msg1_id, msg2_id, ...]
+         liked_by:  [user1_id, user2_id, ...]
 ```
