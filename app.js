@@ -58,7 +58,16 @@ app.get("/register", function(req, res){
 
 app.post("/login", function(req, res){
     if(req.body.username && req.body.password) {
-    	res.redirect("/chat");
+        User.find({name: req.body.username, password: req.body.password})
+            .limit(1).exec(function(err, result) {
+                if(result.length != 0){
+                    res.cookie('Token', result[0].token, { maxAge: 900000, httpOnly: true });
+                    res.redirect("/chat"); 
+                }
+                else {
+                    res.render("login", {errors: {loginFailed: true}});
+                }
+            });
     }
     else {
     	res.render("login", {errors: {loginFailed: true}});

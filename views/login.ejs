@@ -8,9 +8,11 @@
     <body>
         <form tag="User Login" action="/login" method="POST">
         <div align="center">
-            Username *: <input type="username" name="username" id="username" class="<%= shouldValidate && emptyUsername ? "error" : "" %>" />
+            Username *: <input type="username" name="username" id="username"/>
  
-            Password *: <input type="password" name="pwd" id="password" class="<%= shouldValidate && emptyPwd ? "error" : "" %>"/>
+            Password *: <input type="password" name="password" id="password"/>
+
+            <div><%= errors.loginFailed ? "Login failed!" : ''%></div>
 
             <input type="submit" value="Log in" />
         </div>

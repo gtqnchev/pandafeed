@@ -9,9 +9,9 @@
     <body>
         <form tag="Register User" action="/register" method="POST">
 		<div align="center">
-			Username *: <input type="username" name="username" id="username" class="<%= errors.emptyUsername ? "error" : "" %>" />
+			Username *: <input type="username" name="username" id="username"/>
  
-            Password *: <input type="password" name="password" id="password" class="<%=  errors.emptyPassword ? "error" : "" %>"/>
+            Password *: <input type="password" name="password" id="password"/>
             
             <div><%= errors.userExists ? "Username is taken!" : ''%></div>
 
