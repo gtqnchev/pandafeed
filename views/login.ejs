@@ -3,20 +3,23 @@
     <head>
         <meta charset="utf-8">
         <title>PandaFeed</title>
-        <link rel="stylesheet" type="text/css" href="/css/style.css">
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="/css/signin.css">
     </head>
     <body>
-        <form tag="User Login" action="/login" method="POST">
-        <div align="center">
-            Username *: <input type="username" name="username" id="username"/>
- 
-            Password *: <input type="password" name="password" id="password"/>
-
-            <div><%= errors.loginFailed ? "Login failed!" : ''%></div>
-
-            <input type="submit" value="Log in" />
+        <div>
+            <form class="form-signin" tag="User Login" action="/login" method="POST">
+            <h2 class="form-signin-heading">Please sign in</h2>
+            <label for="username" class="sr-only">Username</label>
+            <input type="username" name="username" id="username" class="form-control" placeholder="Username" required autofocus>
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required/>
+            <% if(errors.loginFailed) { %>
+            <div class="alert alert-danger text-center">Login failed!</div>
+            <% } %>
+            <input type="submit" value="Sign in" class="btn btn-lg btn-primary btn-block"/>
+            </form>
         </div>
-    </form>
     <script src="js/validations.js"></script>
     </body>
 </html>
