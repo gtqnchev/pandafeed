@@ -9,22 +9,21 @@
     <body>
         <div>
             <form class="form-signin" tag="User Login" action="/login" method="POST">
-            <h2 class="form-signin-heading">Please sign in</h2>
-            <label for="username" class="sr-only">Username</label>
-            <input type="username" name="username" id="username" class="form-control" placeholder="Username" required autofocus>
-            <label for="password" class="sr-only">Password</label>
-            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required/>
-            <% if(errors.loginFailed) { %>
-            <div class="alert alert-danger text-center">Login failed!</div>
-            <% } %>
-            <input type="submit" value="Sign in" class="btn btn-lg btn-primary btn-block"/>
-            <div class="register-redirect">
-                If you dont have an account, please
-                <a href="/register">register</a>.
-            </div>
+                <h2 class="form-signin-heading">Please sign in</h2>
+                <label for="username" class="sr-only">Username</label>
+                <input type="username" name="username" id="username" class="form-control" placeholder="Username" required autofocus>
+                <label for="password" class="sr-only">Password</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Password" required/>
+                <% if(errors.loginFailed) { %>
+                <div class="alert alert-danger text-center">Login failed!</div>
+                <% } %>
+                <input type="submit" value="Sign in" class="btn btn-lg btn-primary btn-block"/>
+                <div class="register-redirect">
+                    If you dont have an account, please
+                    <a href="/register">register</a>.
+                </div>
             </form>
-            
+
         </div>
-    <script src="js/validations.js"></script>
     </body>
 </html>

@@ -5,21 +5,19 @@
         <title>PandaFeed</title>
         <link rel="stylesheet" href="/css/bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="/css/signin.css">
-
     </head>
     <body>
         <div>
             <form class="form-signin" tag="Register User" action="/register" method="POST">
-			<label for="username" class="sr-only">Username</label>
-            <input type="username" name="username" id="username" class="form-control" placeholder="Username" required autofocus>
-            <label for="password" class="sr-only">Password</label>
-            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required/>
-            <% if(errors.userExists) { %>
-            <div class="alert alert-danger text-center">Username is taken!</div>
-            <% } %>
-			<input type="submit" value="Register" class="btn btn-lg btn-primary btn-block"/>
-	        </form>
+                <label for="username" class="sr-only">Username</label>
+                <input type="username" name="username" id="username" class="form-control" placeholder="Username" required autofocus>
+                <label for="password" class="sr-only">Password</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Password" required/>
+                <% if(errors.userExists) { %>
+                <div class="alert alert-danger text-center">Username is taken!</div>
+                <% } %>
+                <input type="submit" value="Register" class="btn btn-lg btn-primary btn-block"/>
+            </form>
         </div>
-    <script src="js/validations.js"></script>
     </body>
 </html>
