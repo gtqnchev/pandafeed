@@ -6,7 +6,9 @@ var express = require("express"),
     port = 3000,
     bp = require('body-parser'),
     cp = require('cookie-parser'),
-    User = require('./models/user');
+    User = require('./models/user'),
+    _ = require('underscore'),
+    cookie_age = 365 * 24 * 60 * 60 * 1000;
 
 app.use(express.static(__dirname + '/public'));
 app.use(bp.urlencoded({extended: true}));
@@ -20,11 +22,18 @@ app.get("/", function(req, res){
 });
 
 app.get("/chat", function(req, res){
-    res.render("chat");
+    var token = req.cookies.pandafeed_token;
+    User.find({token: token}).limit(1).exec(function(err, result) {
+        if(result.length === 1) {
+            res.render("chat", { token: token });
+        }
+        else {
+            res.redirect("/login");
+        }
+    });
 });
 
 app.post("/register", function(req, res){
-
     if(req.body.username && req.body.password) {
         User.find({name: req.body.username})
             .limit(1).exec(function(err, result){
@@ -37,7 +46,7 @@ app.post("/register", function(req, res){
                         res.send(err);
                     }
                     else {
-                        res.cookie('Token', user.token, { maxAge: 900000, httpOnly: true });
+                        res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
                         res.redirect("/chat");
                     }});
                 }
@@ -45,10 +54,10 @@ app.post("/register", function(req, res){
                     res.render("register", {errors: {userExists: true}});
                 }
             });
-        
-    } 
+
+    }
     else {
-    	res.render("register", {errors: {userExists: false}});
+        res.render("register", {errors: {userExists: false}});
     }
 });
 
@@ -58,11 +67,11 @@ app.get("/register", function(req, res){
 
 app.post("/login", function(req, res){
     if(req.body.username && req.body.password) {
-        User.find({name: req.body.username, password: req.body.password})
-            .limit(1).exec(function(err, result) {
+        User.find({name: req.body.username, password: req.body.password}).limit(1)
+            .exec(function(err, result) {
                 if(result.length != 0){
-                    res.cookie('Token', result[0].token, { maxAge: 900000, httpOnly: true });
-                    res.redirect("/chat"); 
+                    res.cookie('pandafeed_token', result[0].token, { maxAge: cookie_age, httpOnly: true });
+                    res.redirect("/chat");
                 }
                 else {
                     res.render("login", {errors: {loginFailed: true}});
@@ -70,7 +79,7 @@ app.post("/login", function(req, res){
             });
     }
     else {
-    	res.render("login", {errors: {loginFailed: true}});
+        res.render("login", {errors: {loginFailed: true}});
     }
 });
 
@@ -80,14 +89,37 @@ app.get("/login", function(req, res){
 
 server.listen(port);
 
+var users = {},
+    sockets = {};
+
 io.on('connection', function (socket) {
-    socket.emit('welcome', { messages: dd.messages,
-                             users: dd.users });
+    socket.emit('request_authentication');
 
-    socket.broadcast.emit('info', "User connected.");
+    socket.on('authenticate', function(token) {
+        User.find({token: token}).limit(1).exec(function(err, result) {
+            users[socket.id] = result[0];
+            sockets[socket.id] = socket;
 
-    socket.on('message', function(msg) {
-        socket.broadcast.emit('message', msg);
+            socket.emit('init', { messages: [],
+                                  users: _.values(users)});
+
+            socket.broadcast.emit('users', _.values(users));
+        });
+    });
+
+    socket.on('message', function(message) {
+        var name = users[socket.id].name;
+
+        _.values(sockets).forEach(function(s) {
+            s.emit('message', { text: message.text,
+                                user: {name: name }});
+        });
+    });
+
+    socket.on('disconnect', function() {
+        delete users[socket.id];
+        delete sockets[socket.id];
+        socket.broadcast.emit('users', _.values(users));
     });
 });
 
