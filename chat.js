@@ -10,21 +10,29 @@ var ChatBox = React.createClass({
     getInitialState: function() {
         return { users: [], messages: [] };
     },
+
     componentDidMount: function() {
         socket.on('request_authentication', function() {
             socket.emit('authenticate', token);
         });
 
-        socket.on('init', function(data) {
+        socket.on('initialize', function(data) {
             this.setState({
-                users: data.users,
+                self_id:  data.self_id,
+                users:    data.users,
                 messages: data.messages
             });
         }.bind(this));
 
-        socket.on('users', function(data) {
+        socket.on('update:users', function(data) {
             this.setState({
                 users: data
+            });
+        }.bind(this));
+
+        socket.on('update:user', function(data) {
+            this.setState({
+                user: data
             });
         }.bind(this));
 
@@ -37,11 +45,12 @@ var ChatBox = React.createClass({
             });
         }.bind(this));
     },
+
     render: function() {
         return (
             <div className="chatBox">
                 <MessageBox messages={this.state.messages}/>
-                <UserBox users={this.state.users}/>
+                <UserBox users={this.state.users} self_id={this.state.self_id}/>
             </div>
         );
     }
@@ -95,6 +104,7 @@ var MessageForm = React.createClass({
 
         this.refs.text.getDOMNode().value = '';
     },
+
     render: function() {
         return (
             <form className="messageForm" onSubmit={this.handleSubmit}>
@@ -105,13 +115,12 @@ var MessageForm = React.createClass({
     }
 });
 
-
 var UserBox = React.createClass({
     render: function() {
         return (
             <div className="userBox">
                 <h1>Users</h1>
-                <UserList users={this.props.users}/>
+                <UserList users={this.props.users} self_id={this.props.self_id}/>
             </div>
         );
     }
@@ -120,10 +129,17 @@ var UserBox = React.createClass({
 var UserList = React.createClass({
     render: function() {
         var userNodes = this.props.users.map(function(user) {
-            return (
-                    <User name={user.name} />
-            );
-        });
+            var blocked = (user.blocked_by.indexOf(this.props.self_id) >= 0);
+
+            if (user._id === this.props.self_id) {
+                return (<ThisUser name={user.name} />);
+            }
+            else {
+                return (
+                        <User name={user.name} id={user._id} blocked={blocked} />
+                );
+            }
+        }.bind(this));
 
         return (
             <div className="userList">
@@ -134,11 +150,31 @@ var UserList = React.createClass({
 });
 
 var User = React.createClass({
+    handleBlock: function() {
+        if(this.props.blocked) {
+            socket.emit("unblock", this.props.id);
+        }
+        else {
+            socket.emit("block", this.props.id);
+        }
+    },
+
+    render: function() {
+        var icon_style = this.props.blocked ? "glyphicon glyphicon-volume-off" : "glyphicon glyphicon-volume-up";
+
+        return (<div className="user">
+                {this.props.name}
+                <span onClick={this.handleBlock} className={icon_style}></span>
+                </div>);
+    }
+});
+
+var ThisUser = React.createClass({
     render: function() {
         return (
-            <div className="user">
+                <div className="user">
                 {this.props.name}
-            </div>
+                </div>
         );
     }
 });

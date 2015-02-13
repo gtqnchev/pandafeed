@@ -40,19 +40,18 @@ app.post("/register", function(req, res){
             .limit(1).exec(function(err, result){
                 if(result.length === 0){
                     User.hashPassword(req.body.password, function (err, hash) {
-                        var user = new User({name: req.body.username, password: hash});
+                        var user = new User({name: req.body.username, password: hash, blocked_by: []});
                         user.generateToken();
 
                         user.save(function(err, user){
-                        if(err){
-                            res.send(err);
-                        }
-                        else {
-                            res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
-                            res.redirect("/chat");
-                        }});
+                            if(err){
+                                res.send(err);
+                            }
+                            else {
+                                res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
+                                res.redirect("/chat");
+                            }});
                     });
-                    
                 }
                 else {
                     res.render("register", {errors: {userExists: true}});
@@ -101,36 +100,78 @@ app.get("/login", function(req, res){
 server.listen(port);
 
 var users = {},
-    sockets = {};
+    sockets = {},
+    socket_ids = {};
+
+function sanitizedUser(user) {
+    return { _id:        user._id,
+             name:       user.name,
+             avatar_id:  user.avatar_id,
+             blocked_by: user.blocked_by };
+}
 
 io.on('connection', function (socket) {
     socket.emit('request_authentication');
 
     socket.on('authenticate', function(token) {
         User.find({token: token}).limit(1).exec(function(err, result) {
-            users[socket.id] = result[0];
-            sockets[socket.id] = socket;
+            if(result[0]) {
+                var user = sanitizedUser(result[0]);
+                users[socket.id] = user;
+                sockets[socket.id] = socket;
+                socket_ids[user._id] = socket.id;
 
-            socket.emit('init', { messages: [],
-                                  users: _.values(users)});
+                socket.emit('initialize', { self_id:  user._id,
+                                            users:    _.values(users),
+                                            messages: [] });
 
-            socket.broadcast.emit('users', _.values(users));
+                socket.broadcast.emit('update:users', _.values(users));
+            }
+            else {
+                socket.disconnect();
+            }
         });
     });
 
     socket.on('message', function(message) {
         var name = users[socket.id].name;
+        var not_interested_users_ids = _.map(users[socket.id].blocked_by, function(obj_id) { return obj_id.toString();});
 
         _.values(sockets).forEach(function(s) {
-            s.emit('message', { text: message.text,
-                                user: {name: name }});
+            if(!(_.contains(not_interested_users_ids, users[s.id]._id.toString()))) {
+                s.emit('message', { text: message.text,
+                                    user: {name: name }});
+            }
         });
     });
 
     socket.on('disconnect', function() {
-        delete users[socket.id];
-        delete sockets[socket.id];
-        socket.broadcast.emit('users', _.values(users));
+        if(users[socket.id]) {
+            delete socket_ids[users[socket.id]._id];
+            delete users[socket.id];
+            delete sockets[socket.id];
+            socket.broadcast.emit('update:users', _.values(users));
+        }
+    });
+
+    socket.on('block', function(user_id) {
+        User.findOneAndUpdate({ _id: user_id }, { $push: { blocked_by: users[socket.id]._id }}, function(err, user) {
+            if(!err) {
+                var socket_id = socket_ids[user._id];
+                users[socket_id] = sanitizedUser(user);
+                socket.emit('update:users', _.values(users));
+            }
+        });
+    });
+
+    socket.on('unblock', function(user_id) {
+        User.findOneAndUpdate({ _id: user_id }, { $pull: { blocked_by: users[socket.id]._id }}, function(err, user) {
+            if(!err) {
+                var socket_id = socket_ids[user._id];
+                users[socket_id] = sanitizedUser(user);
+                socket.emit('update:users', _.values(users));
+            }
+        });
     });
 });
 

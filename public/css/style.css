@@ -1,4 +1,10 @@
 .error {
-	border: solid;
-	color: red;
+        border: solid;
+        color: red;
+}
+
+.glyphicon {
+    font-size: 130%;
+    margin-left: 10px;
+    margin-right: 10px;
 }

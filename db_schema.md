@@ -11,11 +11,12 @@
 users collection
 
 ```
-user: _id:       objectID,
-      name:      string,
-      password:  string,
-      avatar_id: objectID
-      blocked:   [user1_id, user2_id, ...]
+user: _id:          objectID,
+      name:         string,
+      password:     string,
+      avatar_id:    objectID,
+      token:        string,
+      blocked_by:   [user1_id, user2_id, ...]
 ```
 
 messages collection
