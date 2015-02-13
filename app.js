@@ -8,7 +8,8 @@ var express = require("express"),
     cp = require('cookie-parser'),
     User = require('./models/user'),
     _ = require('underscore'),
-    cookie_age = 365 * 24 * 60 * 60 * 1000;
+    cookie_age = 365 * 24 * 60 * 60 * 1000,
+    bcrypt = require('bcryptjs');
 
 app.use(express.static(__dirname + '/public'));
 app.use(bp.urlencoded({extended: true}));
@@ -38,17 +39,20 @@ app.post("/register", function(req, res){
         User.find({name: req.body.username})
             .limit(1).exec(function(err, result){
                 if(result.length === 0){
-                    var user = new User({name: req.body.username, password: req.body.password});
-                    user.generateToken();
+                    User.hashPassword(req.body.password, function (err, hash) {
+                        var user = new User({name: req.body.username, password: hash});
+                        user.generateToken();
 
-                    user.save(function(err, user){
-                    if(err){
-                        res.send(err);
-                    }
-                    else {
-                        res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
-                        res.redirect("/chat");
-                    }});
+                        user.save(function(err, user){
+                        if(err){
+                            res.send(err);
+                        }
+                        else {
+                            res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
+                            res.redirect("/chat");
+                        }});
+                    });
+                    
                 }
                 else {
                     res.render("register", {errors: {userExists: true}});
@@ -67,11 +71,18 @@ app.get("/register", function(req, res){
 
 app.post("/login", function(req, res){
     if(req.body.username && req.body.password) {
-        User.find({name: req.body.username, password: req.body.password}).limit(1)
-            .exec(function(err, result) {
-                if(result.length != 0){
-                    res.cookie('pandafeed_token', result[0].token, { maxAge: cookie_age, httpOnly: true });
-                    res.redirect("/chat");
+        User.find({name: req.body.username}).limit(1)
+            .exec(function(err, users) {
+                if(users.length != 0){
+                    bcrypt.compare(req.body.password, users[0].password, function(err, result){
+                        if(result){
+                            res.cookie('pandafeed_token', users[0].token, { maxAge: cookie_age, httpOnly: true });
+                            res.redirect("/chat");
+                        }
+                        else {
+                            res.render("login", {errors: {loginFailed: true}});
+                        }
+                    });
                 }
                 else {
                     res.render("login", {errors: {loginFailed: true}});
