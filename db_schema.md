@@ -29,5 +29,5 @@ message: _id:       objectID
          text:      string
          timestamp: time
          liked_by:  [user1_id, user2_id, ...]
-         blocked_by:[user1_id, user2_id, ...] (consistent chat history)
+         not_for:   [user1_id, user2_id, ...] (consistent chat history)
 ```

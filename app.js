@@ -107,8 +107,6 @@ var users = {},
     sockets = {},
     socket_ids = {};
 
-
-
 io.on('connection', function (socket) {
     socket.emit('request_authentication');
 
