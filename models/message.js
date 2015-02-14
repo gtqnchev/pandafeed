@@ -26,5 +26,11 @@ module.exports = function(mongoose) {
                   .sort({timestamp: -1}).limit(n).exec(cb);
     };
 
+    Message.users_likes = function() {
+        return this.aggregate()
+            .group({_id: "$user_id", likesCount: { $sum: { $size :"$liked_by" }}})
+            .project({_id: 1, likesCount: 1 });
+    };
+
     return Message;
 };

@@ -32,5 +32,10 @@ module.exports = function(mongoose) {
         });
     };
 
+    User.users_blocks = function() {
+        return this.aggregate()
+            .project({_id: 1, blockedCount: { $size: "$blocked_by" }});
+    };
+
     return User;
 };

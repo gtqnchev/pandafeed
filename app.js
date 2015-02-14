@@ -104,8 +104,7 @@ app.get("/login", function(req, res){
 
 app.get("/ratings", function(req, res){
     RatingService.rate().then(function(result){
-        console.log(result);
-        res.render("ratings");    
+        res.send(result);
     });
 });
 
