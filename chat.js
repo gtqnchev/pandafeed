@@ -100,7 +100,7 @@ var MessageForm = React.createClass({
         if (!text) {
             return;
         }
-        socket.emit("message", { text: text });
+        socket.emit("message", text);
 
         this.refs.text.getDOMNode().value = '';
     },

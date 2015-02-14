@@ -2,14 +2,18 @@ var express = require("express"),
     app = express(),
     server = require('http').Server(app),
     io = require('socket.io')(server),
-    dd = require('./dummy_data'),
     port = 3000,
     bp = require('body-parser'),
     cp = require('cookie-parser'),
-    User = require('./models/user'),
     _ = require('underscore'),
     cookie_age = 365 * 24 * 60 * 60 * 1000,
-    bcrypt = require('bcryptjs');
+    bcrypt = require('bcryptjs'),
+    mongoose = require('mongoose'),
+    ObjectId = mongoose.Schema.ObjectId,
+    User = require('./models/user')(mongoose),
+    Message = require('./models/message')(mongoose);
+
+mongoose.connect('mongodb://localhost:27017/pandafeed');
 
 app.use(express.static(__dirname + '/public'));
 app.use(bp.urlencoded({extended: true}));
@@ -103,29 +107,30 @@ var users = {},
     sockets = {},
     socket_ids = {};
 
-function sanitizedUser(user) {
-    return { _id:        user._id,
-             name:       user.name,
-             avatar_id:  user.avatar_id,
-             blocked_by: user.blocked_by };
-}
+
 
 io.on('connection', function (socket) {
     socket.emit('request_authentication');
 
     socket.on('authenticate', function(token) {
         User.find({token: token}).limit(1).exec(function(err, result) {
-            if(result[0]) {
-                var user = sanitizedUser(result[0]);
-                users[socket.id] = user;
-                sockets[socket.id] = socket;
-                socket_ids[user._id] = socket.id;
+            if(result[0] && !socket_ids[result[0]._id]) {
+                Message.last_n(10, result[0]._id, function(err, messages) {
+                    var user = result[0].sanitize();
+                    users[socket.id] = user;
+                    sockets[socket.id] = socket;
+                    socket_ids[user._id] = socket.id;
 
-                socket.emit('initialize', { self_id:  user._id,
-                                            users:    _.values(users),
-                                            messages: [] });
+                    var sanitized_messages = _.chain(messages)
+                            .map(function(msg) { return msg.sanitize();})
+                            .reverse().value();
 
-                socket.broadcast.emit('update:users', _.values(users));
+                    socket.emit('initialize', { self_id:  user._id,
+                                                users:    _.values(users),
+                                                messages: sanitized_messages });
+
+                    socket.broadcast.emit('update:users', _.values(users));
+                });
             }
             else {
                 socket.disconnect();
@@ -133,14 +138,28 @@ io.on('connection', function (socket) {
         });
     });
 
-    socket.on('message', function(message) {
-        var name = users[socket.id].name;
-        var not_interested_users_ids = _.map(users[socket.id].blocked_by, function(obj_id) { return obj_id.toString();});
+    socket.on('message', function(text) {
+        var author = users[socket.id];
 
-        _.values(sockets).forEach(function(s) {
-            if(!(_.contains(not_interested_users_ids, users[s.id]._id.toString()))) {
-                s.emit('message', { text: message.text,
-                                    user: {name: name }});
+        var message = new Message({text:      text,
+                                   user_id:   author._id,
+                                   user:      { name: author.name },
+                                   liked_by:  [],
+                                   not_for:   users[socket.id].blocked_by,
+                                   timestamp: (new Date())          });
+
+        var not_interested_users_ids = _.map(users[socket.id].blocked_by,
+                                             function(obj_id) {
+                                                 return obj_id.toString();
+                                             });
+
+        message.save(function(err, message) {
+            if(!err){
+                _.values(sockets).forEach(function(s) {
+                    if(!(_.contains(not_interested_users_ids, users[s.id]._id.toString()))) {
+                        s.emit('message', message.sanitize());
+                    }
+                });
             }
         });
     });
@@ -158,7 +177,7 @@ io.on('connection', function (socket) {
         User.findOneAndUpdate({ _id: user_id }, { $push: { blocked_by: users[socket.id]._id }}, function(err, user) {
             if(!err) {
                 var socket_id = socket_ids[user._id];
-                users[socket_id] = sanitizedUser(user);
+                users[socket_id] = user.sanitize();
                 socket.emit('update:users', _.values(users));
             }
         });
@@ -168,7 +187,7 @@ io.on('connection', function (socket) {
         User.findOneAndUpdate({ _id: user_id }, { $pull: { blocked_by: users[socket.id]._id }}, function(err, user) {
             if(!err) {
                 var socket_id = socket_ids[user._id];
-                users[socket_id] = sanitizedUser(user);
+                users[socket_id] = user.sanitize();
                 socket.emit('update:users', _.values(users));
             }
         });
