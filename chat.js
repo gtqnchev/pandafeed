@@ -56,6 +56,23 @@ var ChatBox = React.createClass({
                 messages: messages
             });
         }.bind(this));
+
+        socket.on('like', function(message) {
+            var messages_ids = _.map(this.state.messages, function(msg) {
+                return msg._id;
+            });
+
+            var index = messages_ids.indexOf(message._id);
+
+            if(index >= 0) {
+                var messages = this.state.messages;
+                messages[index] = message;
+
+                this.setState({
+                    messages: messages
+                });
+            }
+        }.bind(this));
     },
 
     render: function() {
@@ -133,6 +150,10 @@ var MessageList = React.createClass({
 });
 
 var Message = React.createClass({
+    handleLike: function() {
+        socket.emit('like', this.props.data._id, this.props.data.user_id);
+    },
+
     render: function() {
         return (
             <div className="message">
@@ -142,6 +163,8 @@ var Message = React.createClass({
                 <div className="text">
                     <h4 className="message-info">
                         <small>[{formatTime(this.props.data.timestamp)}]</small> {this.props.data.user.name}:
+                        <span onClick={this.handleLike}className="glyphicon glyphicon-thumbs-up"></span>
+                        <small className="likes-count">Likes: {this.props.data.liked_by.length}</small>
                     </h4>
                     <hr/>
                     {this.props.data.text}
