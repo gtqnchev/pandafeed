@@ -3,8 +3,72 @@
         color: red;
 }
 
+.messageList {
+    overflow-y: scroll;
+    overflow-wrap: break-word;
+    height: 700px;
+}
+
 .glyphicon {
-    font-size: 130%;
+    font-size: 135%;
     margin-left: 10px;
     margin-right: 10px;
+    vertical-align: sub;
+}
+
+.container {
+    margin-top: 40px;
+    max-width: 750px;
+}
+
+.info {
+    display: inline-block;
+    float: left;
+}
+
+.info img {
+    margin-right: 10px;
+}
+
+.text {
+    display: block;
+}
+
+.message {
+    clear: both;
+    padding: 10px;
+}
+
+.message-info {
+    margin: 0;
+}
+
+.message hr {
+    margin: 5px 0;
+}
+
+.list-group-item:hover {
+    background-color: #f5f5f5;
+}
+
+.list-group-item {
+    cursor: pointer;
+}
+
+.panel-heading {
+    font-size: 140%;
+}
+
+h1 {
+    margin-top: 10px;
+}
+
+.messageForm {
+    margin-top: 20px;
+}
+
+.show-previous {
+    width: 95%;
+    font-size: 120%;
+    margin: 10px;
 }

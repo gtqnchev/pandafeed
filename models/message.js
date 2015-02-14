@@ -13,15 +13,17 @@ module.exports = function(mongoose) {
     var Message = mongoose.model('Message', messageSchema);
 
     Message.prototype.sanitize = function() {
-        return { user_id:   this.user_id,
+        return { _id:       this._id,
+                 user_id:   this.user_id,
                  user:      this.user,
                  text:      this.text,
                  liked_by:  this.liked_by,
                  timestamp: this.timestamp };
     };
 
-    Message.last_n = function(n, user_id, cb) {
-        this.find({not_for: { $ne: user_id }}).sort({timestamp: -1}).limit(n).exec(cb);
+    Message.last_n = function(n, timestamp, user_id, cb) {
+        this.find({not_for: { $ne: user_id }, timestamp: { $lt: timestamp }})
+                  .sort({timestamp: -1}).limit(n).exec(cb);
     };
 
     return Message;

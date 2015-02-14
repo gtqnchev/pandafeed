@@ -113,7 +113,7 @@ io.on('connection', function (socket) {
     socket.on('authenticate', function(token) {
         User.find({token: token}).limit(1).exec(function(err, result) {
             if(result[0] && !socket_ids[result[0]._id]) {
-                Message.last_n(10, result[0]._id, function(err, messages) {
+                Message.last_n(10, new Date(), result[0]._id, function(err, messages) {
                     var user = result[0].sanitize();
                     users[socket.id] = user;
                     sockets[socket.id] = socket;
@@ -188,6 +188,19 @@ io.on('connection', function (socket) {
                 users[socket_id] = user.sanitize();
                 socket.emit('update:users', _.values(users));
             }
+        });
+    });
+
+    socket.on('history', function(timestamp_string) {
+        var user_id = users[socket.id]._id;
+        var timestamp = new Date(Date.parse(timestamp_string));
+
+        Message.last_n(10, timestamp, user_id, function(err, messages) {
+            var sanitized_messages = _.chain(messages)
+                    .map(function(msg) { return msg.sanitize();})
+                    .reverse().value();
+
+            socket.emit('history', sanitized_messages);
         });
     });
 });

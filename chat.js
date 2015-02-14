@@ -1,10 +1,16 @@
 var token = document.body.getAttribute("token"),
     React = require('react'),
+    _ = require('underscore'),
     socket = io();
 
 socket.on('ERR', function(error) {
     alert(error);
 });
+
+function formatTime(timestamp) {
+    var time = new Date(Date.parse(timestamp));
+    return time.toLocaleTimeString('en-En', { hour12: false });
+}
 
 var ChatBox = React.createClass({
     getInitialState: function() {
@@ -36,6 +42,12 @@ var ChatBox = React.createClass({
             });
         }.bind(this));
 
+        socket.on('history', function(data) {
+            this.setState({
+                messages: data.concat(this.state.messages)
+            });
+        }.bind(this));
+
         socket.on('message', function(message) {
             var messages = this.state.messages;
             messages.push(message);
@@ -48,7 +60,7 @@ var ChatBox = React.createClass({
 
     render: function() {
         return (
-            <div className="chatBox">
+            <div className="chatBox row">
                 <MessageBox messages={this.state.messages}/>
                 <UserBox users={this.state.users} self_id={this.state.self_id}/>
             </div>
@@ -57,11 +69,37 @@ var ChatBox = React.createClass({
 });
 
 var MessageBox = React.createClass({
+    scrollToBottom: function() {
+        var message_list_node = this.refs.messageList.getDOMNode();
+        message_list_node.scrollTop = message_list_node.scrollHeight;
+    },
+
+    isScolledToBottom: function() {
+        var message_list_node = this.refs.messageList.getDOMNode();
+        var scrollHeight = message_list_node.scrollTop + message_list_node.clientHeight;
+        return scrollHeight === message_list_node.scrollHeight;
+    },
+
+    getInitialState: function() {
+        return { floating: false };
+    },
+
+    componentWillReceiveProps: function() {
+        this.setState({
+            floating: !this.isScolledToBottom()
+        });
+    },
+
+    componentDidUpdate: function(prev_props) {
+        if(!this.state.floating) {
+            this.scrollToBottom();
+        }
+    },
+
     render: function() {
         return (
-            <div className="messageBox">
-                <h1>Messages</h1>
-                <MessageList messages={this.props.messages}/>
+            <div className="messageBox col-sm-9">
+                <MessageList messages={this.props.messages} ref="messageList"/>
                 <MessageForm />
             </div>
         );
@@ -69,6 +107,14 @@ var MessageBox = React.createClass({
 });
 
 var MessageList = React.createClass({
+    handleHistory: function() {
+        var message = this.props.messages[0];
+
+        if(message) {
+            socket.emit('history', message.timestamp);
+        }
+    },
+
     render: function() {
         var messageNodes = this.props.messages.map(function(message) {
             return (
@@ -77,7 +123,10 @@ var MessageList = React.createClass({
         });
         return (
             <div className="messageList">
-            {messageNodes}
+                <button onClick={this.handleHistory} type="button" className="show-previous btn btn-default">
+                    Load previous messages
+                </button>
+                {messageNodes}
             </div>
         );
     }
@@ -87,7 +136,16 @@ var Message = React.createClass({
     render: function() {
         return (
             <div className="message">
-                {this.props.data.user.name}: {this.props.data.text}
+                <div className="info">
+                    <div><img className="img-rounded" src="http://placehold.it/70x70"/></div>
+                </div>
+                <div className="text">
+                    <h4 className="message-info">
+                        <small>[{formatTime(this.props.data.timestamp)}]</small> {this.props.data.user.name}:
+                    </h4>
+                    <hr/>
+                    {this.props.data.text}
+                </div>
             </div>
         );
     }
@@ -108,8 +166,12 @@ var MessageForm = React.createClass({
     render: function() {
         return (
             <form className="messageForm" onSubmit={this.handleSubmit}>
-                <input type="text" placeholder="Say something..." ref="text"/>
-                <input type="submit" value="Post" />
+                <div className="form-group">
+                    <input type="text" className="form-control" rows="3" placeholder="Say something..." ref="text"/>
+                </div>
+                <div className="form-group">
+                    <input type="submit" className="btn btn-default pull-right" value="Send" />
+                </div>
             </form>
         );
     }
@@ -118,9 +180,11 @@ var MessageForm = React.createClass({
 var UserBox = React.createClass({
     render: function() {
         return (
-            <div className="userBox">
-                <h1>Users</h1>
-                <UserList users={this.props.users} self_id={this.props.self_id}/>
+            <div className="userBox col-sm-3">
+                <div className="panel panel-default">
+                    <div className="panel-heading">Online: {this.props.users.length}</div>
+                    <UserList users={this.props.users} self_id={this.props.self_id}/>
+                </div>
             </div>
         );
     }
@@ -142,9 +206,9 @@ var UserList = React.createClass({
         }.bind(this));
 
         return (
-            <div className="userList">
+            <ul className="list-group">
                 {userNodes}
-            </div>
+            </ul>
         );
     }
 });
@@ -162,20 +226,19 @@ var User = React.createClass({
     render: function() {
         var icon_style = this.props.blocked ? "glyphicon glyphicon-volume-off" : "glyphicon glyphicon-volume-up";
 
-        return (<div className="user">
+        return (<li onClick={this.handleBlock} className="list-group-item">
                 {this.props.name}
-                <span onClick={this.handleBlock} className={icon_style}></span>
-                </div>);
+                <span className={icon_style}></span>
+                </li>);
     }
 });
 
 var ThisUser = React.createClass({
     render: function() {
-        return (
-                <div className="user">
-                {this.props.name}
-                </div>
-        );
+        return (<li className="list-group-item user">
+                    {this.props.name}
+                    <span className="glyphicon glyphicon-user"></span>
+                </li>);
     }
 });
 
