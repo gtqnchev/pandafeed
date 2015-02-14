@@ -11,7 +11,8 @@ var express = require("express"),
     mongoose = require('mongoose'),
     ObjectId = mongoose.Schema.ObjectId,
     User = require('./models/user')(mongoose),
-    Message = require('./models/message')(mongoose);
+    Message = require('./models/message')(mongoose),
+    RatingService = require('./services/user_rating_service')(User, Message);
 
 mongoose.connect('mongodb://localhost:27017/pandafeed');
 
@@ -99,6 +100,13 @@ app.post("/login", function(req, res){
 
 app.get("/login", function(req, res){
     res.render("login", {errors: {}});
+});
+
+app.get("/ratings", function(req, res){
+    RatingService.rate().then(function(result){
+        console.log(result);
+        res.render("ratings");    
+    });
 });
 
 server.listen(port);
