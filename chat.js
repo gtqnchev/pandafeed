@@ -57,15 +57,14 @@ var ChatBox = React.createClass({
             });
         }.bind(this));
 
-        socket.on('like', function(message) {
-            var messages_ids = _.map(this.state.messages, function(msg) {
-                return msg._id;
-            });
-
-            var index = messages_ids.indexOf(message._id);
+        socket.on('update:message', function(message) {
+            var messages = this.state.messages,
+                message_to_edit = _.find(messages, function(msg) {
+                    return msg._id === message._id;
+                }),
+                index = messages.indexOf(message_to_edit);
 
             if(index >= 0) {
-                var messages = this.state.messages;
                 messages[index] = message;
 
                 this.setState({
@@ -78,7 +77,7 @@ var ChatBox = React.createClass({
     render: function() {
         return (
             <div className="chatBox row">
-                <MessageBox messages={this.state.messages}/>
+                <MessageBox messages={this.state.messages} self_id={this.state.self_id}/>
                 <UserBox users={this.state.users} self_id={this.state.self_id}/>
             </div>
         );
@@ -116,7 +115,7 @@ var MessageBox = React.createClass({
     render: function() {
         return (
             <div className="messageBox col-sm-9">
-                <MessageList messages={this.props.messages} ref="messageList"/>
+                <MessageList messages={this.props.messages} self_id={this.props.self_id} ref="messageList"/>
                 <MessageForm />
             </div>
         );
@@ -134,10 +133,13 @@ var MessageList = React.createClass({
 
     render: function() {
         var messageNodes = this.props.messages.map(function(message) {
+            var liked = (message.liked_by.indexOf(this.props.self_id) >= 0);
+
             return (
-                <Message data={message}/>
+                <Message data={message} liked={liked}/>
             );
-        });
+        }.bind(this));
+
         return (
             <div className="messageList">
                 <button onClick={this.handleHistory} type="button" className="show-previous btn btn-default">
@@ -151,10 +153,12 @@ var MessageList = React.createClass({
 
 var Message = React.createClass({
     handleLike: function() {
-        socket.emit('like', this.props.data._id, this.props.data.user_id);
+        socket.emit(this.props.liked ? 'unlike' :'like', this.props.data._id, this.props.data.user_id);
     },
 
     render: function() {
+        var like_button_style = "glyphicon glyphicon-thumbs-up " + (this.props.liked ? "liked" : "");
+
         return (
             <div className="message">
                 <div className="info">
@@ -163,7 +167,7 @@ var Message = React.createClass({
                 <div className="text">
                     <h4 className="message-info">
                         <small>[{formatTime(this.props.data.timestamp)}]</small> {this.props.data.user.name}:
-                        <span onClick={this.handleLike}className="glyphicon glyphicon-thumbs-up"></span>
+                        <span onClick={this.handleLike} className={like_button_style}></span>
                         <small className="likes-count">Likes: {this.props.data.liked_by.length}</small>
                     </h4>
                     <hr/>
@@ -238,12 +242,7 @@ var UserList = React.createClass({
 
 var User = React.createClass({
     handleBlock: function() {
-        if(this.props.blocked) {
-            socket.emit("unblock", this.props.id);
-        }
-        else {
-            socket.emit("block", this.props.id);
-        }
+        socket.emit(this.props.blocked ? "unblock" : "block", this.props.id)
     },
 
     render: function() {

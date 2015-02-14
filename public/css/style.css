@@ -80,6 +80,10 @@ h1 {
     color: darkgrey;
 }
 
+.message-info .glyphicon.liked{
+    color: #333;
+}
+
 .likes-count {
     float: right;
     line-height: 21px;

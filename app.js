@@ -211,7 +211,21 @@ io.on('connection', function (socket) {
             Message.findOneAndUpdate({ _id: msg_id }, { $addToSet: { liked_by: users[socket.id]._id }}, function(err, message) {
                 if(!err) {
                     _.values(sockets).forEach(function(s) {
-                        s.emit('like', message.sanitize());
+                        s.emit('update:message', message.sanitize());
+                    });
+                }
+            });
+        }
+    });
+
+    socket.on('unlike', function(msg_id, author_id) {
+        var user = users[socket.id];
+
+        if(author_id != user._id){
+            Message.findOneAndUpdate({ _id: msg_id }, { $pull: { liked_by: users[socket.id]._id }}, function(err, message) {
+                if(!err) {
+                    _.values(sockets).forEach(function(s) {
+                        s.emit('update:message', message.sanitize());
                     });
                 }
             });
