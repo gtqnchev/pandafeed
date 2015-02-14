@@ -40,6 +40,43 @@ module.exports = function(User, Message){
 
             return Q.all([blocks, counts])
                 .then(handleBlocksAndLikes);
+        },
+
+        sortedNamedRanklist: function() {
+            var users_ratings;
+
+            return this.rate()
+                .then(function(result){
+                    users_ratings = result;
+
+                    var ids = _.map(users_ratings, function(user_rating) {
+                        return user_rating._id;
+                    });
+
+                    return User.find({_id: { $in: ids}}, { _id: 1, name: 1}).exec();
+                })
+                .then(function(users_names){
+                    var sorted_users_names = _.sortBy(users_names, function(user_name) {
+                        return user_name._id;
+                    });
+
+                    var sorted_users_ratings =  _.sortBy(users_ratings, function(user_rating) {
+                        return user_rating._id;
+                    });
+
+                    var zipped = _.zip(sorted_users_names, sorted_users_ratings);
+
+                    var users_names_ratings = _.map(zipped, function(names_and_ratings) {
+                        return { name: names_and_ratings[0].name,
+                                 rating: names_and_ratings[1].rating };
+                    });
+
+                    var ranklist = _.sortBy(users_names_ratings, function(user_name_rating) {
+                        return -user_name_rating.rating;
+                    });
+
+                    return ranklist;
+                });
         }
     };
 };

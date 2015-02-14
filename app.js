@@ -102,11 +102,14 @@ app.get("/login", function(req, res){
     res.render("login", {errors: {}});
 });
 
-app.get("/ratings", function(req, res){
-    RatingService.rate().then(function(result){
-        res.send(result);
+app.get("/ranklist", function(req, res){
+    var users_ratings;
+
+    RatingService.sortedNamedRanklist().then(function(result) {
+        res.render('ranklist', {ranklist: result});
     });
 });
+
 
 server.listen(port);
 

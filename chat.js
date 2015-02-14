@@ -242,7 +242,7 @@ var UserList = React.createClass({
 
 var User = React.createClass({
     handleBlock: function() {
-        socket.emit(this.props.blocked ? "unblock" : "block", this.props.id)
+        socket.emit(this.props.blocked ? "unblock" : "block", this.props.id);
     },
 
     render: function() {
