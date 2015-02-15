@@ -3,10 +3,6 @@ var token = document.body.getAttribute("token"),
     _ = require('underscore'),
     socket = io();
 
-socket.on('ERR', function(error) {
-    alert(error);
-});
-
 function formatTime(timestamp) {
     var time = new Date(Date.parse(timestamp));
     return time.toLocaleTimeString('en-En', { hour12: false });
