@@ -3,7 +3,7 @@ var AuthService = require('./../services/auth_service'),
 
 module.exports = function(mongoose) {
     var Schema = mongoose.Schema;
-
+    var ObjectId = mongoose.Types.ObjectId;
     var userSchema = new Schema({ name:       String,
                                   password:   String,
                                   token:      String,
@@ -42,8 +42,10 @@ module.exports = function(mongoose) {
                     return Q.reject();
                 }})
             .then(function(hash) {
+                var avatar_id = ObjectId();
                 var user = new this({name: name, password: hash,
-                                     token: token, blocked_by: []});
+                                     token: token, blocked_by: [],
+                                     avatar_id: avatar_id });
 
                 user.save(function(err, user) {
                     if(err) {

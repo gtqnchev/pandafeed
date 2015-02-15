@@ -1,5 +1,7 @@
 var multer = require('multer'),
-    cp = require('cookie-parser');
+    cp = require('cookie-parser'),
+    fileSystem = require('fs'),
+    path = require('path');
 
 module.exports = function(mongoose, app, User) {
     var File = require('./models/file')(mongoose, User);
@@ -10,7 +12,9 @@ module.exports = function(mongoose, app, User) {
         var read_stream = File.readStream(req.params.file_id);
 
         read_stream.on('error', function(err) {
-            res.status(404).send("FILE NOT FOUND.");
+            var filePath = path.join(__dirname, '/public/images/70x70.gif');
+            var default_stream = fileSystem.createReadStream(filePath);
+            default_stream.pipe(res);
         });
 
         read_stream.pipe(res);
