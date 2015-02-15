@@ -158,11 +158,14 @@ var Message = React.createClass({
 
     render: function() {
         var like_button_style = "glyphicon glyphicon-thumbs-up " + (this.props.liked ? "liked" : "");
+        var avatar_id = this.props.data.user.avatar_id;
+        var avatar_link = avatar_id ? ('/avatar/' + avatar_id) : ('/images/70x70.gif');
+
 
         return (
             <div className="message">
                 <div className="info">
-                    <div><img className="img-rounded" src="http://placehold.it/70x70"/></div>
+                <div><img className="img-rounded" src={avatar_link}/></div>
                 </div>
                 <div className="text">
                     <h4 className="message-info">

@@ -8,7 +8,8 @@ module.exports = function(mongoose) {
                                   password:   String,
                                   token:      String,
                                   blocked:    [Schema.Types.ObjectId],
-                                  blocked_by: [Schema.Types.ObjectId] });
+                                  blocked_by: [Schema.Types.ObjectId],
+                                  avatar_id:  Schema.Types.ObjectId   });
 
     var User = mongoose.model('User', userSchema);
 

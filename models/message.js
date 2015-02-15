@@ -2,7 +2,7 @@ module.exports = function(mongoose) {
     var Schema = mongoose.Schema;
 
     var messageSchema = new Schema({ user_id:    Schema.Types.ObjectId,
-                                     user:       { name: String },
+                                     user:       { name: String, avatar_id: Schema.Types.ObjectId },
                                      text:       String,
                                      liked_by:   [Schema.Types.ObjectId],
                                      not_for:    [Schema.Types.ObjectId],

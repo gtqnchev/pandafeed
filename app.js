@@ -12,10 +12,14 @@ var express = require("express"),
     ObjectId = mongoose.Schema.ObjectId,
     User = require('./models/user')(mongoose),
     Message = require('./models/message')(mongoose),
-    RatingService = require('./services/user_rating_service')(User, Message);
+    RatingService = require('./services/user_rating_service')(User, Message),
+    AuthService = require('./services/auth_service')(User),
+    Q = require('q');
+
 
 mongoose.connect('mongodb://localhost:27017/pandafeed');
 
+var FileServer = require('./file_server')(mongoose, app, AuthService, User);
 app.use(express.static(__dirname + '/public'));
 app.use(bp.urlencoded({extended: true}));
 app.use(cp());
@@ -29,8 +33,9 @@ app.get("/", function(req, res){
 
 app.get("/chat", function(req, res){
     var token = req.cookies.pandafeed_token;
-    User.find({token: token}).limit(1).exec(function(err, result) {
-        if(result.length === 1) {
+
+    AuthService.identifyUser(token).then(function(user) {
+        if(user){
             res.render("chat", { token: token });
         }
         else {
@@ -151,7 +156,7 @@ io.on('connection', function (socket) {
 
         var message = new Message({text:      text,
                                    user_id:   author._id,
-                                   user:      { name: author.name },
+                                   user:      { name: author.name, avatar_id: author.avatar_id },
                                    liked_by:  [],
                                    not_for:   users[socket.id].blocked_by,
                                    timestamp: (new Date())          });
