@@ -1,19 +1,12 @@
 var User = require('./../models/user'),
-    File = require('./../models/file'),
-    fileSystem = require('fs'),
-    path = require('path');
+    File = require('./../models/file');
 
 module.exports = {
     getAvatar: function(req, res) {
-        var read_stream = File.readStream(req.params.file_id);
-
-        read_stream.on('error', function(err) {
-            var filePath = path.join(__dirname, '../public/images/70x70.gif');
-            var default_stream = fileSystem.createReadStream(filePath);
-            default_stream.pipe(res);
-        });
-
-        read_stream.pipe(res);
+        File.getReadStream(req.params.file_id)
+            .then(function(stream) {
+                stream.pipe(res);
+            });
     },
 
     serveAvatarForm: function(req, res) {

@@ -2,8 +2,12 @@ var mongoose = require('mongoose'),
     ObjectId = mongoose.Types.ObjectId,
     User = require('./user'),
     Grid = require('gridfs-stream'),
-    gfs = Grid(mongoose.connection.db, mongoose.mongo);
-    fs = require('fs');
+    gfs = Grid(mongoose.connection.db, mongoose.mongo),
+    fs = require('fs'),
+    path = require('path'),
+    Q = require('q');
+
+var defaultAvatarPath = path.join(__dirname, '../public/images/70x70.gif');
 
 function File(user_id, avatar_id, filename) {
     this.user_id = user_id;
@@ -11,8 +15,19 @@ function File(user_id, avatar_id, filename) {
     this.avatar_id = avatar_id;
 };
 
-File.readStream = function(id) {
-    return gfs.createReadStream({_id: id});
+File.getReadStream = function(id) {
+    var deferred = Q.defer();
+
+    gfs.exist({_id: id}, function (err, found) {
+        if(found) {
+            deferred.resolve(gfs.createReadStream({_id: id}));
+        }
+        else {
+            deferred.resolve(fs.createReadStream(defaultAvatarPath));
+        }
+    });
+
+    return deferred.promise;
 };
 
 File.prototype.save_from = function(path, callback) {
