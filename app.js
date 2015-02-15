@@ -41,6 +41,10 @@ app.get("/chat", function(req, res){
     });
 });
 
+app.get("/register", function(req, res){
+    res.render("register", {errors: {}});
+});
+
 app.post("/register", function(req, res){
     if(req.body.username && req.body.password) {
         User.create(req.body.username, req.body.password)
@@ -56,8 +60,8 @@ app.post("/register", function(req, res){
     }
 });
 
-app.get("/register", function(req, res){
-    res.render("register", {errors: {}});
+app.get("/login", function(req, res){
+    res.render("login", {errors: {}});
 });
 
 app.post("/login", function(req, res){
@@ -73,10 +77,6 @@ app.post("/login", function(req, res){
     else {
         res.render("login", {errors: {loginFailed: true}});
     }
-});
-
-app.get("/login", function(req, res){
-    res.render("login", {errors: {}});
 });
 
 app.get("/logout", function(req, res){
