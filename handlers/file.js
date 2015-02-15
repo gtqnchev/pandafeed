@@ -14,18 +14,13 @@ module.exports = {
     },
 
     uploadAvatar: function(req, res) {
-        User.findByToken(req.cookies.pandafeed_token)
-            .then(function(user) {
-                if(user){
-                    var tempfile = req.files.filename.path,
-                        file     = new File(user._id, user.avatar_id, req.files.filename.originalname);
+        var filepath = req.files.filename.path,
+            filename = req.files.filename.originalname,
+            user_token = req.cookies.pandafeed_token;
 
-                    file.save_from(tempfile, function() {
-                        res.redirect("/");
-                    });
-                }
-                else {
-                    res.redirect("/login");
-                }});
+        File.saveAvatarFor(user_token, filename, filepath)
+            .then(function() {
+                res.redirect("/");
+            });
     }
 };

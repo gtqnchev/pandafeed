@@ -1,5 +1,4 @@
 var mongoose = require('mongoose'),
-    ObjectId = mongoose.Types.ObjectId,
     User = require('./user'),
     Grid = require('gridfs-stream'),
     gfs = Grid(mongoose.connection.db, mongoose.mongo),
@@ -9,45 +8,34 @@ var mongoose = require('mongoose'),
 
 var defaultAvatarPath = path.join(__dirname, '../public/images/70x70.gif');
 
-function File(user_id, avatar_id, filename) {
-    this.user_id = user_id;
-    this.filename = filename;
-    this.avatar_id = avatar_id;
+module.exports = {
+    getReadStream: function(file_id) {
+        var deferred = Q.defer();
+
+        gfs.exist({_id: file_id}, function (err, found) {
+            if(found) {
+                deferred.resolve(gfs.createReadStream({_id: file_id}));
+            }
+            else {
+                deferred.resolve(fs.createReadStream(defaultAvatarPath));
+            }
+        });
+
+        return deferred.promise;
+    },
+
+    saveAvatarFor: function(user_token, filename, filepath) {
+        return User.findByToken(user_token)
+            .then(function(user) {
+                var properties = { _id: user.avatar_id,
+                                   filename: filename,
+                                   mode: 'w',
+                                   metadata: { user_id: user._id }};
+
+                var read_stream  = fs.createReadStream(filepath),
+                    write_stream = gfs.createWriteStream(properties);
+
+                return read_stream.pipe(write_stream);
+            });
+    }
 };
-
-File.getReadStream = function(id) {
-    var deferred = Q.defer();
-
-    gfs.exist({_id: id}, function (err, found) {
-        if(found) {
-            deferred.resolve(gfs.createReadStream({_id: id}));
-        }
-        else {
-            deferred.resolve(fs.createReadStream(defaultAvatarPath));
-        }
-    });
-
-    return deferred.promise;
-};
-
-File.prototype.save_from = function(path, callback) {
-    var _id = this.avatar_id || (new ObjectId());
-    var read_stream = fs.createReadStream(path);
-    var write_stream = gfs.createWriteStream({ _id:      _id,
-                                               filename: this.filename,
-                                               metadata: { user_id: this.user_id },
-                                               mode: 'w'});
-    read_stream.pipe(write_stream);
-
-    write_stream.on('close', function(file) {
-        if(!this.avatar_id) {
-            User.findOneAndUpdate({_id: this.user_id}, { avatar_id: file._id }, callback);
-        }
-        else
-        {
-            callback();
-        }
-    }.bind(this));
-};
-
-module.exports = File;
