@@ -2,27 +2,24 @@ var express = require("express"),
     app = express(),
     server = require('http').Server(app),
     io = require('socket.io')(server),
-    port = 3000,
-    bp = require('body-parser'),
-    cp = require('cookie-parser'),
+    config = require('./config'),
+    bodyParser = require('body-parser'),
+    cookieParser = require('cookie-parser'),
     _ = require('underscore'),
-    cookie_age = 365 * 24 * 60 * 60 * 1000,
-    bcrypt = require('bcryptjs'),
     mongoose = require('mongoose'),
     ObjectId = mongoose.Schema.ObjectId,
     User = require('./models/user')(mongoose),
     Message = require('./models/message')(mongoose),
     RatingService = require('./services/user_rating_service')(User, Message),
-    AuthService = require('./services/auth_service')(User),
     Q = require('q');
 
+mongoose.connect(config.DBparams);
 
-mongoose.connect('mongodb://localhost:27017/pandafeed');
+var FileServer = require('./file_server')(mongoose, app, User);
 
-var FileServer = require('./file_server')(mongoose, app, AuthService, User);
 app.use(express.static(__dirname + '/public'));
-app.use(bp.urlencoded({extended: true}));
-app.use(cp());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
@@ -34,7 +31,7 @@ app.get("/", function(req, res){
 app.get("/chat", function(req, res){
     var token = req.cookies.pandafeed_token;
 
-    AuthService.identifyUser(token).then(function(user) {
+    User.findByToken(token).then(function(user) {
         if(user){
             res.render("chat", { token: token });
         }
@@ -46,28 +43,13 @@ app.get("/chat", function(req, res){
 
 app.post("/register", function(req, res){
     if(req.body.username && req.body.password) {
-        User.find({name: req.body.username})
-            .limit(1).exec(function(err, result){
-                if(result.length === 0){
-                    User.hashPassword(req.body.password, function (err, hash) {
-                        var user = new User({name: req.body.username, password: hash, blocked_by: []});
-                        user.generateToken();
-
-                        user.save(function(err, user){
-                            if(err){
-                                res.send(err);
-                            }
-                            else {
-                                res.cookie('pandafeed_token', user.token, { maxAge: cookie_age, httpOnly: true });
-                                res.redirect("/chat");
-                            }});
-                    });
-                }
-                else {
-                    res.render("register", {errors: {userExists: true}});
-                }
+        User.create(req.body.username, req.body.password)
+            .then(function(user) {
+                res.cookie('pandafeed_token', user.token, { maxAge: config.cookieAge, httpOnly: true });
+                res.redirect("/chat");
+            }, function(err){
+                res.render("register", {errors: {userExists: true}});
             });
-
     }
     else {
         res.render("register", {errors: {userExists: false}});
@@ -80,22 +62,12 @@ app.get("/register", function(req, res){
 
 app.post("/login", function(req, res){
     if(req.body.username && req.body.password) {
-        User.find({name: req.body.username}).limit(1)
-            .exec(function(err, users) {
-                if(users.length != 0){
-                    bcrypt.compare(req.body.password, users[0].password, function(err, result){
-                        if(result){
-                            res.cookie('pandafeed_token', users[0].token, { maxAge: cookie_age, httpOnly: true });
-                            res.redirect("/chat");
-                        }
-                        else {
-                            res.render("login", {errors: {loginFailed: true}});
-                        }
-                    });
-                }
-                else {
-                    res.render("login", {errors: {loginFailed: true}});
-                }
+        User.authenticate(req.body.username, req.body.password)
+            .then(function(user){
+                res.cookie('pandafeed_token', user.token, { maxAge: config.cookieAge, httpOnly: true });
+                res.redirect("/chat");
+            }, function() {
+                res.render("login", {errors: {loginFailed: true}});
             });
     }
     else {
@@ -118,7 +90,7 @@ app.get("/ranklist", function(req, res){
     });
 });
 
-server.listen(port);
+server.listen(config.port);
 
 var users = {},
     sockets = {},
@@ -250,4 +222,4 @@ io.on('connection', function (socket) {
     });
 });
 
-console.log("Listening on port " + port);
+console.log("Listening on port " + config.port);

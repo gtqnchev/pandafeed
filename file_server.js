@@ -1,7 +1,7 @@
 var multer = require('multer'),
     cp = require('cookie-parser');
 
-module.exports = function(mongoose, app, AuthService, User) {
+module.exports = function(mongoose, app, User) {
     var File = require('./models/file')(mongoose, User);
     app.use(multer());
     app.use(cp());
@@ -17,7 +17,7 @@ module.exports = function(mongoose, app, AuthService, User) {
     });
 
     app.get('/avatar', function(req, res) {
-        AuthService.identifyUser(req.cookies.pandafeed_token)
+        User.findByToken(req.cookies.pandafeed_token)
             .then(function(user) {
                 if(user){
                     res.render("avatar");
@@ -29,7 +29,7 @@ module.exports = function(mongoose, app, AuthService, User) {
     });
 
     app.post('/avatar', function(req, res) {
-        AuthService.identifyUser(req.cookies.pandafeed_token)
+        User.findByToken(req.cookies.pandafeed_token)
             .then(function(user) {
                 if(user){
                     var tempfile = req.files.filename.path,

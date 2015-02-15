@@ -1,5 +1,5 @@
-var crypto = require('crypto'),
-    bcrypt = require('bcryptjs');
+var AuthService = require('./../services/auth_service'),
+    Q = require('q');
 
 module.exports = function(mongoose) {
     var Schema = mongoose.Schema;
@@ -7,18 +7,10 @@ module.exports = function(mongoose) {
     var userSchema = new Schema({ name:       String,
                                   password:   String,
                                   token:      String,
-                                  blocked:    [Schema.Types.ObjectId],
                                   blocked_by: [Schema.Types.ObjectId],
                                   avatar_id:  Schema.Types.ObjectId   });
 
     var User = mongoose.model('User', userSchema);
-
-    User.prototype.generateToken = function() {
-        var date = (new Date()).valueOf().toString(),
-            number = Math.random().toString();
-
-        this.token = crypto.createHash('md5').update(date + number).digest('hex');
-    };
 
     User.prototype.sanitize = function() {
         return { _id:        this._id,
@@ -27,15 +19,65 @@ module.exports = function(mongoose) {
                  blocked_by: this.blocked_by };
     };
 
-    User.hashPassword = function(password, cb){
-        bcrypt.genSalt(10, function(err, salt){
-            bcrypt.hash(password, salt, cb);
-        });
-    };
+    User.findByToken = function(token) {
+        return User.findOne({token: token}).exec();
+    },
 
     User.users_blocks = function() {
         return this.aggregate()
             .project({_id: 1, blockedCount: { $size: "$blocked_by" }});
+    };
+
+    User.create = function(name, password) {
+        var deferred = Q.defer();
+        var token = AuthService.generateToken();
+
+        User.findOne({name: name}).exec()
+            .then(function(user){
+                if(!user){
+                    return AuthService.hashPassword(password);
+                }
+                else {
+                    deferred.reject();
+                    return Q.reject();
+                }})
+            .then(function(hash) {
+                var user = new this({name: name, password: hash,
+                                     token: token, blocked_by: []});
+
+                user.save(function(err, user) {
+                    if(err) {
+                        deferred.reject();
+                    }
+                    else {
+                        deferred.resolve(user);
+                    }
+                });
+            }.bind(this));
+
+        return deferred.promise;
+    };
+
+    User.authenticate = function(name, password) {
+        var deferred = Q.defer();
+
+        User.findOne({name: name}).exec(function(err, user) {
+            if(user){
+                AuthService.compare(password, user.password, function(err, match) {
+                    if(match) {
+                        deferred.resolve(user);
+                    }
+                    else {
+                        deferred.reject();
+                    }
+                });
+            }
+            else {
+                deferred.reject();
+            }
+        });
+
+        return deferred.promise;
     };
 
     return User;
