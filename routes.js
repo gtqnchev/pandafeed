@@ -3,10 +3,6 @@ var mainHandlers = require('./handlers/main'),
     fileHandlers = require('./handlers/file');
 
 module.exports = function(app, io) {
-    app.get("/", mainHandlers.serveRoot);
-    app.get("/chat", mainHandlers.serveChat);
-    app.get("/ranklist", mainHandlers.serveRanklist);
-
     app.get("/login", mainHandlers.serveLogin);
     app.post("/login", mainHandlers.loginUser);
     app.get("/logout", mainHandlers.logoutUser);
@@ -15,6 +11,12 @@ module.exports = function(app, io) {
     app.post("/register", mainHandlers.registerUser);
 
     app.get('/avatar/:file_id', fileHandlers.getAvatar);
+
+    app.use(mainHandlers.authMiddleware);
+
+    app.get("/", mainHandlers.serveChat);
+    app.get("/ranklist", mainHandlers.serveRanklist);
+
     app.get('/avatar', fileHandlers.serveAvatarForm);
     app.post('/avatar', fileHandlers.uploadAvatar);
 

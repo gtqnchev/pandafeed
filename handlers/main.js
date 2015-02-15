@@ -4,24 +4,11 @@ var User = require('./../models/user'),
     _ = require('underscore'),
     config = require('./../config');
 
+function setCookie(res, value) {
+    res.cookie('pandafeed_token', value, { maxAge: config.cookieAge, httpOnly: true });
+};
+
 module.exports = {
-    serveRoot: function(req, res){
-        res.render("index");
-    },
-
-    serveChat: function(req, res){
-        var token = req.cookies.pandafeed_token;
-
-        User.findByToken(token).then(function(user) {
-            if(user){
-                res.render("chat", { token: token });
-            }
-            else {
-                res.redirect("/login");
-            }
-        });
-    },
-
     serveRegister: function(req, res){
         res.render("register", {errors: {}});
     },
@@ -30,11 +17,9 @@ module.exports = {
         if(req.body.username && req.body.password) {
             User.create(req.body.username, req.body.password)
                 .then(function(user) {
-                    console.log("user:", user);
-                    res.cookie('pandafeed_token', user.token, { maxAge: config.cookieAge, httpOnly: true });
-                    res.redirect("/chat");
+                    setCookie(res, user.token);
+                    res.redirect("/");
                 }, function(err){
-                    console.log("NO USER");
                     res.render("register", {errors: {userExists: true}});
                 });
         }
@@ -48,16 +33,12 @@ module.exports = {
     },
 
     loginUser: function(req, res){
-        console.log("trying to login");
         if(req.body.username && req.body.password) {
-            console.log("there is username and password");
             User.authenticate(req.body.username, req.body.password)
                 .then(function(user){
-                    console.log("user:", user);
-                    res.cookie('pandafeed_token', user.token, { maxAge: config.cookieAge, httpOnly: true });
-                    res.redirect("/chat");
+                    setCookie(res, user.token);
+                    res.redirect("/");
                 }, function() {
-                    console.log("NO USER");
                     res.render("login", {errors: {loginFailed: true}});
                 });
         }
@@ -69,6 +50,24 @@ module.exports = {
     logoutUser: function(req, res){
         res.clearCookie("pandafeed_token");
         res.render("login", {errors: {}});
+    },
+
+    authMiddleware: function(req, res, next) {
+        var token = req.cookies.pandafeed_token;
+
+        User.findByToken(token).then(function(user) {
+            if(user){
+                return next();
+            }
+            else {
+                return res.redirect("/login");
+            }
+        });
+    },
+
+    serveChat: function(req, res){
+        var token = req.cookies.pandafeed_token;
+        res.render("chat", { token: token });
     },
 
     serveRanklist: function(req, res){

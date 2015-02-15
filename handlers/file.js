@@ -17,15 +17,7 @@ module.exports = {
     },
 
     serveAvatarForm: function(req, res) {
-        User.findByToken(req.cookies.pandafeed_token)
-            .then(function(user) {
-                if(user){
-                    res.render("avatar");
-                }
-                else {
-                    res.redirect("/login");
-                }
-            });
+        res.render("avatar");
     },
 
     uploadAvatar: function(req, res) {
@@ -36,7 +28,7 @@ module.exports = {
                         file     = new File(user._id, user.avatar_id, req.files.filename.originalname);
 
                     file.save_from(tempfile, function() {
-                        res.redirect("/chat");
+                        res.redirect("/");
                     });
                 }
                 else {
