@@ -107,6 +107,11 @@ app.get("/login", function(req, res){
     res.render("login", {errors: {}});
 });
 
+app.get("/logout", function(req, res){
+    res.clearCookie("pandafeed_token");
+    res.render("login", {errors: {}});
+});
+
 app.get("/ranklist", function(req, res){
     var users_ratings;
 

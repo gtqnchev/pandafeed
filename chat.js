@@ -215,6 +215,7 @@ var UserBox = React.createClass({
                     <div className="panel-heading">Online: {this.props.users.length}</div>
                     <UserList users={this.props.users} self_id={this.props.self_id}/>
                 </div>
+                <a className="btn btn-default" href="/ranklist" role="button">Ranklist</a>
             </div>
         );
     }
@@ -263,6 +264,8 @@ var ThisUser = React.createClass({
         return (<li className="list-group-item user">
                     {this.props.name}
                     <span className="glyphicon glyphicon-user"></span>
+                    <a className="glyphicon glyphicon-off" href="/logout" role="button"></a>
+
                 </li>);
     }
 });
