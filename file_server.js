@@ -36,7 +36,7 @@ module.exports = function(mongoose, app, User) {
                         file     = new File(user._id, user.avatar_id, req.files.filename.originalname);
 
                     file.save_from(tempfile, function() {
-                        res.send("Avatar updated");
+                        res.redirect("/chat");
                     });
                 }
                 else {

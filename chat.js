@@ -213,6 +213,7 @@ var UserBox = React.createClass({
             <div className="userBox col-sm-3">
                 <a className="btn btn-default ranklist-btn" href="/ranklist" role="button">Ranklist</a>
                 <a className="btn btn-default logout-btn" href="/logout" role="button">Logout</a>
+                <a className="btn btn-default logout-btn" href="/avatar" role="button">Change Avatar</a>
                 <div className="panel panel-default">
                     <div className="panel-heading text-center">Online: {this.props.users.length}</div>
                     <UserList users={this.props.users} self_id={this.props.self_id}/>

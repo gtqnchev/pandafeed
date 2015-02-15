@@ -8,10 +8,16 @@
     </head>
     <body>
         <section class="container">
-            <h1>Upload new avatar</h1>
             <form action="/avatar" id="form" method="post" enctype="multipart/form-data">
-                <input type="file" name="filename" id="filename">
-                <input type="submit" value="Upload File" name="submit">
+                <h2>Upload new avatar</h2>
+                <div class="form-group">
+                    <input type="file" class="form-control" name="filename" id="filename">
+                </div>
+
+                <div class="form-group">
+                    <input type="submit" value="Upload File" name="submit" class="btn btn-default">
+                    <a class="btn btn-default" href="/chat" role="button">To Chat</a>
+                </div>
             </form>
         </section>
     </body>
