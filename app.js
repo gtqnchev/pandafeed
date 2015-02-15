@@ -113,13 +113,10 @@ app.get("/logout", function(req, res){
 });
 
 app.get("/ranklist", function(req, res){
-    var users_ratings;
-
     RatingService.sortedNamedRanklist().then(function(result) {
         res.render('ranklist', {ranklist: result});
     });
 });
-
 
 server.listen(port);
 

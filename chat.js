@@ -211,11 +211,13 @@ var UserBox = React.createClass({
     render: function() {
         return (
             <div className="userBox col-sm-3">
+                <a className="btn btn-default ranklist-btn" href="/ranklist" role="button">Ranklist</a>
+                <a className="btn btn-default logout-btn" href="/logout" role="button">Logout</a>
                 <div className="panel panel-default">
-                    <div className="panel-heading">Online: {this.props.users.length}</div>
+                    <div className="panel-heading text-center">Online: {this.props.users.length}</div>
                     <UserList users={this.props.users} self_id={this.props.self_id}/>
                 </div>
-                <a className="btn btn-default" href="/ranklist" role="button">Ranklist</a>
+
             </div>
         );
     }
@@ -252,7 +254,7 @@ var User = React.createClass({
     render: function() {
         var icon_style = this.props.blocked ? "glyphicon glyphicon-volume-off" : "glyphicon glyphicon-volume-up";
 
-        return (<li onClick={this.handleBlock} className="list-group-item">
+        return (<li onClick={this.handleBlock} className="list-group-item text-center">
                 {this.props.name}
                 <span className={icon_style}></span>
                 </li>);
@@ -261,11 +263,9 @@ var User = React.createClass({
 
 var ThisUser = React.createClass({
     render: function() {
-        return (<li className="list-group-item user">
+        return (<li className="list-group-item user text-center">
                     {this.props.name}
                     <span className="glyphicon glyphicon-user"></span>
-                    <a className="glyphicon glyphicon-off" href="/logout" role="button"></a>
-
                 </li>);
     }
 });
